@@ -1,0 +1,2867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Chain - Supplier Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #14b8a6; /* Teal 500 */
+            --primary-dark: #0d9488; /* Teal 600 */
+            --secondary: #134e4a; /* Teal 900 */
+            --dark: #042f2e; /* Teal 950 */
+            --light: #f0fdfa; /* Teal 50 */
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --text-light: #ccfbf1; /* Teal 100 */
+            --text-dark: #134e4a; /* Teal 900 */
+            --border: #2dd4bf; /* Teal 400 */
+            --bg-card: rgba(19, 78, 74, 0.7); /* Teal 900 with opacity */
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f766e, #042f2e); /* Teal 700 to Teal 950 */
+            color: var(--light);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Header */
+        header {
+            background-color: rgba(15, 118, 110, 0.5); /* Teal 700 with opacity */
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(45, 212, 191, 0.2); /* Teal 400 with opacity */
+        }
+        
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--light);
+            text-decoration: none;
+        }
+        
+        .logo span {
+            color: #5eead4; /* Teal 300 */
+        }
+        
+        .logo i {
+            margin-right: 0.75rem;
+            color: #5eead4; /* Teal 300 */
+        }
+        
+        /* Main Content */
+        main {
+            flex-grow: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--light);
+        }
+        
+        .dashboard-header p {
+            color: #99f6e4; /* Teal 200 */
+        }
+        
+        /* Card Styling */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            animation: fadeIn 0.3s ease-out;
+            border: 1px solid rgba(45, 212, 191, 0.2); /* Teal 400 with opacity */
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(45, 212, 191, 0.3);
+        }
+        
+        .card-header i {
+            font-size: 1.25rem;
+            margin-right: 0.75rem;
+            color: #5eead4; /* Teal 300 */
+        }
+        
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #ccfbf1; /* Teal 100 */
+        }
+        
+        /* Form Elements */
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        input[type="password"] {
+            flex: 1;
+            background-color: rgba(19, 78, 74, 0.5); /* Teal 900 with opacity */
+            border: 1px solid rgba(45, 212, 191, 0.3); /* Teal 400 with opacity */
+            border-radius: 0.5rem;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+            color: var(--light);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="password"]:focus {
+            border-color: #2dd4bf; /* Teal 400 */
+            box-shadow: 0 0 0 1px #2dd4bf; /* Teal 400 */
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            color: white;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--text-dark);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            background-color: #059669;
+        }
+        
+        .btn-secondary {
+            background-color: #0d9488; /* Teal 600 */
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #0f766e; /* Teal 700 */
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            max-width: 300px;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            transform: translateY(-100%);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .notification.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .notification-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .notification-error {
+            background-color: var(--error);
+            color: white;
+        }
+        
+        /* Account Badge */
+        .account-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(19, 78, 74, 0.5); /* Teal 900 with opacity */
+            border: 1px solid rgba(45, 212, 191, 0.3); /* Teal 400 with opacity */
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+        }
+        
+        .account-status {
+            width: 0.625rem;
+            height: 0.625rem;
+            border-radius: 50%;
+            background-color: var(--success);
+            margin-right: 0.75rem;
+        }
+        
+        /* Debug Console */
+        .debug-console {
+            background-color: rgba(4, 47, 46, 0.8); /* Teal 950 with opacity */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+            margin-top: 0.75rem;
+            border: 1px solid rgba(19, 78, 74, 1); /* Teal 900 */
+        }
+        
+        .debug-message {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        .debug-success {
+            color: #34d399; /* Green 400 */
+        }
+        
+        .debug-error {
+            color: #f87171; /* Red 400 */
+        }
+        
+        .debug-info {
+            color: #5eead4; /* Teal 300 */
+        }
+        
+        /* Table Styling */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(45, 212, 191, 0.3); /* Teal 400 with opacity */
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead th {
+            background-color: rgba(15, 118, 110, 0.5); /* Teal 700 with opacity */
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: #99f6e4; /* Teal 200 */
+            padding: 0.75rem 1.25rem;
+            text-align: left;
+        }
+        
+        tbody tr {
+            border-top: 1px solid rgba(45, 212, 191, 0.2); /* Teal 400 with opacity */
+            transition: background-color 0.2s;
+        }
+        
+        tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        tbody td {
+            padding: 1rem 1.25rem;
+            color: #ccfbf1; /* Teal 100 */
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background-color: rgba(20, 184, 166, 0.2); /* Teal 500 with opacity */
+            color: #99f6e4; /* Teal 200 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid rgba(20, 184, 166, 0.3); /* Teal 500 with opacity */
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #99f6e4; /* Teal 200 */
+            font-style: italic;
+        }
+        
+        /* Loading Spinner */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+        }
+        
+        .spinner {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 3px solid rgba(20, 184, 166, 0.3); /* Teal 500 with opacity */
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: rgba(15, 118, 110, 0.5); /* Teal 700 with opacity */
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: #99f6e4; /* Teal 200 */
+            margin-top: auto;
+            border-top: 1px solid rgba(45, 212, 191, 0.2); /* Teal 400 with opacity */
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .btn-container {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification Component -->
+    <div id="notification" class="notification">
+        <span id="notification-message"></span>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="#" class="logo">
+                <i class="fas fa-link"></i>
+                <div>Supply<span>Chain</span><span></div>
+            </a>
+            <div id="account-info" style="display:none;">
+                <div class="account-badge">
+                    <div class="account-status"></div>
+                    <span id="wallet-address">0x0000...0000</span>
+                </div>
+                <button id="logout-btn" class="btn btn-secondary" style="margin-left: 0.75rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Dashboard Title -->
+        <div class="dashboard-header">
+            <h1>Supplier</h1>
+            <p>Add and manage your inventory products in the blockchain</p>
+        </div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="card animate-fade-in">
+            <div class="card-header">
+                <i class="fas fa-key"></i>
+                <h2>Supplier Authentication</h2>
+            </div>
+            <div>
+                <div class="input-group">
+                    <input type="password" id="private-key" placeholder="Enter Your Private Key" />
+                </div>
+                <button id="login-btn" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login as Supplier
+                </button>
+            </div>
+
+            <!-- Contract Address Section -->
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(45, 212, 191, 0.3);">
+                <h3 style="font-size: 0.875rem; color: #99f6e4; margin-bottom: 0.5rem;">Set Contract Address</h3>
+                <div class="input-group">
+                    <input type="text" id="contract-address" placeholder="Contract Address" />
+                    <button id="set-contract-btn" class="btn btn-secondary">
+                        Set Address
+                    </button>
+                </div>
+                <p style="font-size: 0.75rem; color: #99f6e4; margin-top: 0.5rem;">Current: <span id="current-contract">YOUR_CONTRACT_ADDRESS</span></p>
+            </div>
+
+            <div style="margin-top: 1rem; text-align: center; font-size: 0.75rem; color: #99f6e4;">
+                <p>Authenticate with your private key to access your supplier dashboard.</p>
+                <p style="margin-top: 0.5rem;">You must be added as a supplier by the contract owner.</p>
+            </div>
+        </div>
+
+        <!-- Dashboard Content (Hidden initially) -->
+        <div id="dashboard-content" style="display:none;">
+            <!-- Contract Address Setting -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-bolt"></i>
+                    <h2>Set Contract Address</h2>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="contract-address-loggedin" placeholder="Contract Address" />
+                    <div class="btn-container" style="display: flex; gap: 0.5rem;">
+                        <button id="set-contract-loggedin-btn" class="btn btn-secondary">
+                            Set Address
+                        </button>
+                        <button id="verify-contract-btn" class="btn btn-primary">
+                            Verify Contract
+                        </button>
+                    </div>
+                </div>
+                <p style="font-size: 0.875rem; color: #99f6e4; margin-top: 0.5rem;">Current contract: <span id="current-contract-loggedin">YOUR_CONTRACT_ADDRESS</span></p>
+            </div>
+
+            <!-- Debug Console -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-terminal"></i>
+                    <h2>Debug Console</h2>
+                </div>
+                <div class="debug-console" id="debug-console">
+                    <div class="debug-message debug-info">Welcome to Supply Chain Pro debug console</div>
+                </div>
+            </div>
+			<!-- Add Transporter Card -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-truck"></i>
+                <h2>Add Transporter</h2>
+            </div>
+            <div class="input-group">
+                <input
+                    id="new-transporter-input"
+                    type="text"
+                    placeholder="Transporter Ethereum Address (0x...)"
+                    class="flex-1"
+                />
+                <button id="add-transporter-btn" class="btn btn-primary" disabled>
+                    <i class="fas fa-plus"></i>
+                    Add Transporter
+                </button>
+            </div>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Only managers can add transporters. Make sure you have manager privileges.
+            </div>
+        </div>
+
+        <!-- Transporters List Card -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>Transporter Management</h2>
+            </div>
+           
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 20px 20px 20px; padding-top: 20px;">
+                <button id="refresh-transporters-btn" class="btn btn-secondary" disabled>
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh Transporters
+                </button>
+                <div class="status-badge status-active">
+                    <i class="fas fa-circle"></i>
+                    Active Transporters
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="transporters-loading" class="loading-container" style="display: none;">
+                <div class="spinner"></div>
+                <p style="margin-left: 15px; color: #6c757d;">Loading transporters...</p>
+            </div>
+
+            <!-- Transporters Table -->
+            <div id="transporters-table-container" class="table-container" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-id-card"></i> Transporter Address</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transporters-table-body">
+                        <!-- Transporter rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="transporters-empty" class="empty-state" style="display: none;">
+                <i class="fas fa-truck"></i>
+                <h3>No Transporters Found</h3>
+                <p>Add your first transporter using the form above.</p>
+            </div>
+            
+
+            <!-- Add New Product -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-plus-circle"></i>
+                    <h2>Add New Product</h2>
+                </div>
+                <div class="input-group">
+                    <div style="flex: 2;">
+                        <label style="display: block; font-size: 0.875rem; color: #99f6e4; margin-bottom: 0.25rem;">Product Name</label>
+                        <input type="text" id="product-name" placeholder="Enter product name" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.875rem; color: #99f6e4; margin-bottom: 0.25rem;">Unit Price</label>
+                        <input type="number" id="product-price" placeholder="0" min="1" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.875rem; color: #99f6e4; margin-bottom: 0.25rem;">Quantity</label>
+                        <input type="number" id="product-quantity" placeholder="0" min="1" />
+                    </div>
+                </div>
+
+                <button id="add-product-btn" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-plus"></i>
+                    Add Product to Inventory
+                </button>
+            </div>
+
+            <!-- Products Table -->
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h2>My Products</h2>
+                    </div>
+                    <button id="refresh-btn" class="btn btn-secondary" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+                
+                <div id="products-loading" class="loading-container">
+                    <div class="spinner"></div>
+                </div>
+                
+                <div id="products-empty" class="empty-message" style="display:none;">
+                    <i class="fas fa-box-open" style="font-size: 2.5rem; color: #5eead4; opacity: 0.5; margin-bottom: 1rem; display: block;"></i>
+                    <p style="font-size: 1.125rem;">No products found</p>
+                    <p style="font-size: 0.875rem; margin-top: 0.5rem;">Add your first product to get started</p>
+                </div>
+                
+                <div id="products-table" class="table-container" style="display:none;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Quantity</th>
+                                <th>Status</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody">
+                            <!-- Products will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Customer Requests Section -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-tasks"></i>
+                <h2>All Purchase Requests</h2>
+            </div>
+            <button class="btn btn-secondary" onclick="loadAllRequests()">Load Requests</button>
+            <div id="requests-list" class="table-container" style="margin-top: 1rem; display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requests-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>SupplyChainPro &copy; 2025 | Blockchain Supply Chain Management</p>
+    </footer>
+
+    <script>
+        // Contract ABI - Replace with your actual ABI
+        const contractAbi =[
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "DeliveryConfirmed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum SupplyChainSystem.DeliveryStage",
+				"name": "stage",
+				"type": "uint8"
+			}
+		],
+		"name": "DeliveryUpdated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "ManagerAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "ManagerRemoved",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "supplier",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "transporter",
+				"type": "address"
+			}
+		],
+		"name": "OrderApproved",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "customer",
+				"type": "address"
+			}
+		],
+		"name": "OrderPlaced",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "previousOwner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "OwnershipTransferred",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "supplier",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "unitPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "ProductAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "Refunded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "target",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint8",
+				"name": "rating",
+				"type": "uint8"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "comment",
+				"type": "string"
+			}
+		],
+		"name": "ReviewSubmitted",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "TransporterAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "TransporterRemoved",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "acceptQuotation",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "addManager",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "unitPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stock",
+				"type": "uint256"
+			}
+		],
+		"name": "addProduct",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "addTransporter",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "unitPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "transporter",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "transportFee",
+				"type": "uint256"
+			}
+		],
+		"name": "approveOrder",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "cancelOrder",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "confirmReceipt",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "customerToRequests",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "deliveries",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "transporter",
+				"type": "address"
+			},
+			{
+				"internalType": "enum SupplyChainSystem.DeliveryStage",
+				"name": "stage",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllProducts",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "unitPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "stock",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct SupplyChainSystem.Product[]",
+				"name": "",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllRequests",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "customer",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "supplier",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "productName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "quantity",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxUnitPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "deliveryAddress",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum SupplyChainSystem.RequestStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct SupplyChainSystem.PurchaseRequest[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "customer",
+				"type": "address"
+			}
+		],
+		"name": "getCustomerRequests",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "getDelivery",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "transporter",
+						"type": "address"
+					},
+					{
+						"internalType": "enum SupplyChainSystem.DeliveryStage",
+						"name": "stage",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct SupplyChainSystem.DeliveryInfo",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "getPayment",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "customer",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "supplier",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "transporter",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "supplierAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "transportFee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "settled",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "refunded",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct SupplyChainSystem.Payment",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "supplier",
+				"type": "address"
+			}
+		],
+		"name": "getSupplierProducts",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "unitPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "stock",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct SupplyChainSystem.Product[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "supplier",
+				"type": "address"
+			}
+		],
+		"name": "getSupplierReviews",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "rating",
+						"type": "uint8"
+					},
+					{
+						"internalType": "string",
+						"name": "comment",
+						"type": "string"
+					}
+				],
+				"internalType": "struct SupplyChainSystem.Review[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "transporter",
+				"type": "address"
+			}
+		],
+		"name": "getTransporterReviews",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "rating",
+						"type": "uint8"
+					},
+					{
+						"internalType": "string",
+						"name": "comment",
+						"type": "string"
+					}
+				],
+				"internalType": "struct SupplyChainSystem.Review[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "isManager",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "isTransporter",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "rating",
+				"type": "uint8"
+			},
+			{
+				"internalType": "string",
+				"name": "comment",
+				"type": "string"
+			}
+		],
+		"name": "leaveReview",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "offeredPrices",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "payments",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "customer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "supplier",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "transporter",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "supplierAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "transportFee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "settled",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "refunded",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "supplier",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "productName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "maxUnitPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "deliveryAddress",
+				"type": "string"
+			}
+		],
+		"name": "placeOrder",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "processRefund",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "removeManager",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "removeTransporter",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "requests",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "customer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "supplier",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "productName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "maxUnitPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "deliveryAddress",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum SupplyChainSystem.RequestStatus",
+				"name": "status",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "unitPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "sendQuotation",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "supplierProducts",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "unitPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stock",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "supplierReviews",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "rating",
+				"type": "uint8"
+			},
+			{
+				"internalType": "string",
+				"name": "comment",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "suppliers",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "transporterReviews",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "rating",
+				"type": "uint8"
+			},
+			{
+				"internalType": "string",
+				"name": "comment",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum SupplyChainSystem.DeliveryStage",
+				"name": "stage",
+				"type": "uint8"
+			}
+		],
+		"name": "updateDeliveryStage",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+];
+
+        // Global variables
+        let contractAddress = 'YOUR_CONTRACT_ADDRESS';
+        let wallet = null;
+        let contract = null;
+        let products = [];
+        let isLoading = false;
+
+        // DOM Elements
+        const privateKeyInput = document.getElementById('private-key');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const contractAddressInput = document.getElementById('contract-address');
+        const contractAddressLoggedInInput = document.getElementById('contract-address-loggedin');
+        const setContractBtn = document.getElementById('set-contract-btn');
+        const setContractLoggedInBtn = document.getElementById('set-contract-loggedin-btn');
+        const verifyContractBtn = document.getElementById('verify-contract-btn');
+        const walletAddressSpan = document.getElementById('wallet-address');
+        const currentContractSpan = document.getElementById('current-contract');
+        const currentContractLoggedInSpan = document.getElementById('current-contract-loggedin');
+        const loginSection = document.getElementById('login-section');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const accountInfo = document.getElementById('account-info');
+        const debugConsole = document.getElementById('debug-console');
+        const productNameInput = document.getElementById('product-name');
+        const productQuantityInput = document.getElementById('product-quantity');
+        const addProductBtn = document.getElementById('add-product-btn');
+        const productPriceInput = document.getElementById('product-price');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const productsLoading = document.getElementById('products-loading');
+        const productsEmpty = document.getElementById('products-empty');
+        const productsTable = document.getElementById('products-table');
+        const productsTbody = document.getElementById('products-tbody');
+
+		// DOM elements for transporter management
+		//const newTransporterInput = document.getElementById('new-transporter-input');
+		//const addTransporterBtn = document.getElementById('add-transporter-btn');
+		//const refreshTransportersBtn = document.getElementById('refresh-transporters-btn');
+		//const transportersLoading = document.getElementById('transporters-loading');
+		//const transportersTableContainer = document.getElementById('transporters-table-container');
+		//const transportersTableBody = document.getElementById('transporters-table-body');
+		//const transportersEmptyMessage = document.getElementById('transporters-empty-message');
+
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Display current contract address
+            currentContractSpan.textContent = contractAddress;
+            currentContractLoggedInSpan.textContent = contractAddress;
+            
+            // Hide loading initially
+            productsLoading.style.display = 'none';
+            
+            // Event Listeners
+            loginBtn.addEventListener('click', login);
+            logoutBtn.addEventListener('click', logout);
+            setContractBtn.addEventListener('click', setContractAddress);
+            setContractLoggedInBtn.addEventListener('click', setContractAddress);
+            verifyContractBtn.addEventListener('click', () => checkContract());
+            addProductBtn.addEventListener('click', addProduct);
+            refreshBtn.addEventListener('click', () => fetchProducts());
+            addTransporterBtn.addEventListener('click', addTransporter);
+			refreshTransportersBtn.addEventListener('click', fetchTransporters);
+            // Focus private key input
+            privateKeyInput.focus();
+        });
+
+        // Show notification function
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            
+            notification.className = 'notification';
+            notification.classList.add(`notification-${type}`);
+            notification.classList.add('visible');
+            
+            notificationMessage.textContent = message;
+            
+            setTimeout(() => {
+                notification.classList.remove('visible');
+            }, 3000);
+        }
+
+        // Add debug message
+        function addDebugMessage(message, isError = false) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('debug-message');
+            
+            if (isError) {
+                messageElement.classList.add('debug-error');
+            } else {
+                messageElement.classList.add('debug-success');
+            }
+            
+            messageElement.textContent = message;
+            debugConsole.appendChild(messageElement);
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+        }
+
+        // Login function
+        async function login() {
+            const privateKey = privateKeyInput.value.trim();
+            
+            if (!privateKey) {
+                showNotification('Please enter your private key', 'error');
+                return;
+            }
+            
+            try {
+                isLoading = true;
+                setLoadingState(true);
+                
+                // Create wallet using private key
+                const wlt = new ethers.Wallet(privateKey);
+                
+                // Connect to a provider
+                const provider = new ethers.providers.JsonRpcProvider();
+                const connectedWallet = wlt.connect(provider);
+                
+                // Create contract instance
+                const ctr = new ethers.Contract(contractAddress, contractAbi, connectedWallet);
+                
+                // Set global variables
+                wallet = connectedWallet;
+                contract = ctr;
+                
+                // Update UI
+                walletAddressSpan.textContent = truncateAddress(wallet.address);
+                loginSection.style.display = 'none';
+                dashboardContent.style.display = 'block';
+                accountInfo.style.display = 'flex';
+                
+                // Fetch products and check contract
+                fetchProducts();
+                checkContract();
+                
+                showNotification('Successfully logged in!', 'success');
+                addDebugMessage('Login successful. Connected with address: ' + truncateAddress(wallet.address));
+                
+            } catch (err) {
+                console.error('Login error:', err);
+                showNotification('Invalid private key. Please check and try again.', 'error');
+                addDebugMessage('Login error: ' + err.message, true);
+            } finally {
+                isLoading = false;
+                setLoadingState(false);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            wallet = null;
+            contract = null;
+            products = [];
+            privateKeyInput.value = '';
+            
+            // Update UI
+            loginSection.style.display = 'block';
+            dashboardContent.style.display = 'none';
+            accountInfo.style.display = 'none';
+            
+            showNotification('Logged out successfully', 'success');
+            
+            // Clear products table
+            productsTbody.innerHTML = '';
+        }
+
+        // Set contract address
+        function setContractAddress() {
+            // Get value from either of the contract address inputs
+            const addressInput = dashboardContent.style.display === 'none' 
+                ? contractAddressInput 
+                : contractAddressLoggedInInput;
+            
+            const customAddress = addressInput.value.trim();
+            
+            if (!customAddress) {
+                showNotification('Please enter a contract address', 'error');
+                return;
+            }
+            
+            try {
+                if (!ethers.utils.isAddress(customAddress)) {
+                    showNotification('Invalid contract address format', 'error');
+                    addDebugMessage('Invalid contract address format', true);
+                    return;
+                }
+                
+                contractAddress = customAddress;
+                currentContractSpan.textContent = contractAddress;
+                currentContractLoggedInSpan.textContent = contractAddress;
+                
+                addDebugMessage(`Contract address set to: ${contractAddress}`);
+                showNotification('Contract address updated successfully!', 'success');
+                
+                // Clear the input
+                addressInput.value = '';
+                
+                // Reinitialize contract with new address if logged in
+                if (wallet) {
+                    contract = new ethers.Contract(contractAddress, contractAbi, wallet);
+                    checkContract();
+                }
+            } catch (error) {
+                console.error('Error setting contract address:', error);
+                showNotification('Failed to set contract address', 'error');
+                addDebugMessage(`Error setting contract address: ${error.message}`, true);
+            }
+        }
+
+        // Check contract
+        async function checkContract() {
+            if (!wallet) {
+                addDebugMessage('Please login first', true);
+                return;
+            }
+
+            addDebugMessage(`Checking contract at ${contractAddress}...`);
+
+            try {
+                isLoading = true;
+                setLoadingState(true);
+
+                const provider = wallet.provider;
+                if (!provider) {
+                    addDebugMessage(`Provider is undefined`, true);
+                    showNotification('Provider is not available', 'error');
+                    return;
+                }
+
+                const code = await provider.getCode(contractAddress);
+
+                if (!code || code === '0x') {
+                    addDebugMessage(`No contract found at address: ${contractAddress}`, true);
+                    showNotification('No contract found at this address', 'error');
+                } else {
+                    try {
+                        const products = await contract.getSupplierProducts(wallet.address);
+                        addDebugMessage(`Contract verified! Found ${products.length} products.`);
+                        showNotification('Contract verified successfully!', 'success');
+                        fetchProducts();
+                    } catch (funcError) {
+                        addDebugMessage(`Contract exists but may have incompatible ABI: ${funcError.message}`, true);
+                        showNotification('Contract exists but may have incompatible ABI', 'error');
+                    }
+                }
+            } catch (error) {
+                addDebugMessage(`Error checking contract: ${error.message}`, true);
+                showNotification('Error checking contract', 'error');
+            } finally {
+                isLoading = false;
+                setLoadingState(false);
+            }
+        }
+        // Add product function
+    async function addProduct() {
+        if (!wallet || !contract) {
+            showNotification('Please login and set a valid contract first', 'error');
+            return;
+        }
+        
+        const productName = productNameInput.value.trim();
+        const productQuantity = parseInt(productQuantityInput.value);
+        const productPrice = parseInt(productPriceInput.value);
+
+        if (isNaN(productPrice) || productPrice <= 0) {
+            showNotification('Please enter a valid price', 'error');
+            return;
+        }
+        
+        if (!productName) {
+            showNotification('Please enter a product name', 'error');
+            return;
+        }
+        
+        if (isNaN(productQuantity) || productQuantity <= 0) {
+            showNotification('Please enter a valid quantity', 'error');
+            return;
+        }
+        
+        try {
+            isLoading = true;
+            setLoadingState(true);
+            addDebugMessage(`Adding product: ${productName} (Quantity: ${productQuantity})...`);
+            
+            // Call contract method to add product
+            const tx = await contract.addProduct(productName, productPrice, productQuantity);
+
+            addDebugMessage(`Transaction sent: ${tx.hash}`);
+            
+            // Wait for transaction to be mined
+            await tx.wait();
+            
+            addDebugMessage(`Product "${productName}" added successfully!`);
+            showNotification('Product added successfully!', 'success');
+            
+            // Clear inputs
+            productNameInput.value = '';
+            productQuantityInput.value = '';
+            
+            // Refresh products list
+            fetchProducts();
+            
+        } catch (error) {
+            console.error('Error adding product:', error);
+            showNotification('Failed to add product', 'error');
+            addDebugMessage(`Error adding product: ${error.message}`, true);
+        } finally {
+            isLoading = false;
+            setLoadingState(false);
+        }
+    }
+    
+    async function fetchProducts() {
+        if (!wallet || !contract) return;
+
+        try {
+            isLoading = true;
+            setLoadingState(true);
+            addDebugMessage('Fetching products from contract...');
+
+            const productsFromContract = await contract.getSupplierProducts(wallet.address);
+
+            products = productsFromContract.map((p, index) => ({
+                id: index + 1,
+                name: p.name,
+                quantity: p.stock.toNumber(),
+                price: p.unitPrice.toNumber(),
+                timestamp: Math.floor(Date.now() / 1000),  // tạm thời dùng timestamp hiện tại
+                status: "Available"
+            }));
+
+            addDebugMessage(`Fetched ${products.length} products from contract.`);
+            productsTbody.innerHTML = '';
+            displayProducts();
+
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            addDebugMessage(`Error fetching products: ${error.message}`, true);
+            showNotification('Failed to fetch products', 'error');
+        } finally {
+            isLoading = false;
+            setLoadingState(false);
+        }
+    }
+
+
+    
+    // Get status string from numeric status
+    function getStatusString(statusCode) {
+        // Convert BigNumber to number if needed
+        const status = typeof statusCode === 'object' ? statusCode.toNumber() : statusCode;
+        
+        switch (status) {
+            case 0:
+                return 'Created';
+            case 1:
+                return 'Processing';
+            case 2:
+                return 'Shipped';
+            case 3:
+                return 'Delivered';
+            default:
+                return 'Unknown';
+        }
+    }
+    
+    // Display products in table
+    function displayProducts() {
+    // Clear table body
+    productsTbody.innerHTML = '';
+    
+    // Show appropriate UI based on products
+    if (products.length === 0) {
+        productsTable.style.display = 'none';
+        productsEmpty.style.display = 'block';
+    } else {
+        productsTable.style.display = 'block';
+        productsEmpty.style.display = 'none';
+        
+        // Add products to table
+        products.forEach(product => {
+            const tr = document.createElement('tr');
+            
+            // ID cell
+            const idTd = document.createElement('td');
+            idTd.textContent = product.id;
+            
+            // Name cell
+            const nameTd = document.createElement('td');
+            nameTd.textContent = product.name;
+            
+            // Quantity cell
+            const quantityTd = document.createElement('td');
+            quantityTd.textContent = product.quantity;
+            
+            // Status cell
+            const statusTd = document.createElement('td');
+            const statusBadge = document.createElement('span');
+            statusBadge.classList.add('status-badge');
+            statusBadge.textContent = product.status || 'Available';
+            statusTd.appendChild(statusBadge);
+            
+            // Timestamp cell (convert from UNIX timestamp to readable)
+            const timestampTd = document.createElement('td');
+            // Giả sử product.timestamp là số nguyên UNIX timestamp (giây)
+            if (product.timestamp) {
+                const date = new Date(product.timestamp * 1000);
+                timestampTd.textContent = date.toLocaleString(); // ví dụ: 29/5/2025, 15:20:30
+            } else {
+                timestampTd.textContent = 'N/A';
+            }
+            
+            // Add all cells to row
+            tr.appendChild(idTd);
+            tr.appendChild(nameTd);
+            tr.appendChild(quantityTd);
+            tr.appendChild(statusTd);
+            tr.appendChild(timestampTd);  // Thêm cột thời gian
+            
+            // Add row to table
+            productsTbody.appendChild(tr);
+        });
+    }
+}
+
+
+
+    
+    // Set loading state for product list
+    function setLoadingState(loading) {
+        if (loading) {
+            productsLoading.style.display = 'flex';
+            productsTable.style.display = 'none';
+            productsEmpty.style.display = 'none';
+            addProductBtn.disabled = true;
+            refreshBtn.disabled = true;
+        } else {
+            productsLoading.style.display = 'none';
+            addProductBtn.disabled = false;
+            refreshBtn.disabled = false;
+            
+            // Show table or empty message based on products array
+            if (products.length === 0) {
+                productsTable.style.display = 'none';
+                productsEmpty.style.display = 'block';
+            } else {
+                productsTable.style.display = 'block';
+                productsEmpty.style.display = 'none';
+            }
+        }
+    }
+    
+    // Helper function to truncate Ethereum address
+    function truncateAddress(address) {
+        if (!address) return '';
+        return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    }
+    
+    // Add additional product operations
+    
+    // Update product status
+    async function updateProductStatus(productId, newStatus) {
+        if (!wallet || !contract) {
+            showNotification('Please login and set a valid contract first', 'error');
+            return;
+        }
+        
+        try {
+            isLoading = true;
+            setLoadingState(true);
+            addDebugMessage(`Updating product #${productId} status to ${getStatusString(newStatus)}...`);
+            
+            // Call contract method to update product status
+            const tx = await contract.updateProductStatus(productId, newStatus);
+            addDebugMessage(`Transaction sent: ${tx.hash}`);
+            
+            // Wait for transaction to be mined
+            await tx.wait();
+            
+            addDebugMessage(`Product #${productId} status updated successfully!`);
+            showNotification('Product status updated successfully!', 'success');
+            
+            // Refresh products list
+            fetchProducts();
+            
+        } catch (error) {
+            console.error('Error updating product status:', error);
+            showNotification('Failed to update product status', 'error');
+            addDebugMessage(`Error updating status: ${error.message}`, true);
+        } finally {
+            isLoading = false;
+            setLoadingState(false);
+        }
+    }
+    
+    // Update product quantity
+    async function updateProductQuantity(productId, newQuantity) {
+        if (!wallet || !contract) {
+            showNotification('Please login and set a valid contract first', 'error');
+            return;
+        }
+        
+        if (isNaN(newQuantity) || newQuantity <= 0) {
+            showNotification('Please enter a valid quantity', 'error');
+            return;
+        }
+        
+        try {
+            isLoading = true;
+            setLoadingState(true);
+            addDebugMessage(`Updating product #${productId} quantity to ${newQuantity}...`);
+            
+            // Call contract method to update product quantity
+            const tx = await contract.updateProductQuantity(productId, newQuantity);
+            addDebugMessage(`Transaction sent: ${tx.hash}`);
+            
+            // Wait for transaction to be mined
+            await tx.wait();
+            
+            addDebugMessage(`Product #${productId} quantity updated successfully!`);
+            showNotification('Product quantity updated successfully!', 'success');
+            
+            // Refresh products list
+            fetchProducts();
+            
+        } catch (error) {
+            console.error('Error updating product quantity:', error);
+            showNotification('Failed to update product quantity', 'error');
+            addDebugMessage(`Error updating quantity: ${error.message}`, true);
+        } finally {
+            isLoading = false;
+            setLoadingState(false);
+        }
+    }
+    
+    // Check if user is a manager
+    async function checkManagerStatus() {
+        if (!wallet || !contract) {
+            return false;
+        }
+        
+        try {
+            const isManager = await contract.isManager(wallet.address);
+            if (isManager) {
+                addDebugMessage('User confirmed as supplier');
+                return true;
+            } else {
+                addDebugMessage('User is not registered as a supplier', true);
+                showNotification('Your account is not registered as a supplier. Contact the contract owner.', 'error');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error checking supplier status:', error);
+            addDebugMessage(`Error checking supplier status: ${error.message}`, true);
+            return false;
+        }
+			}
+
+		function getStatusText(statusCode) {
+    const map = {
+        0: "Chờ xử lý",
+        1: "Đã báo giá",
+        2: "Khách đã chấp nhận",
+        3: "Đã duyệt",
+        4: "Đã giao",
+        5: "Thất bại",
+        6: "Đã hoàn tiền",
+    };
+    return map[statusCode] || "Không rõ";
+}
+
+async function loadAllRequests() {
+    if (!wallet || !contract) return;
+
+    try {
+        const allRequests = await contract.getAllRequests();
+        const myRequests = allRequests.filter(
+            req => req.supplier.toLowerCase() === wallet.address.toLowerCase()
+        );
+
+        const tbody = document.getElementById("requests-tbody");
+        tbody.innerHTML = "";
+
+        if (myRequests.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Không có yêu cầu nào</td></tr>`;
+        } else {
+            for (const req of myRequests) {
+                const statusText = getStatusText(req.status);
+                const offeredPrice = await contract.offeredPrices(req.id);
+                let actionCell = "";
+				
+                // Giá đã báo
+                let info = "";
+				
+                if (req.status >= 1) {
+                    info += `<div>💬 Giá báo: ${ethers.utils.formatEther(offeredPrice)} ETH</div>`;
+                }
+
+                // Nếu đang chờ xử lý: cho báo giá
+                if (req.status === 0) {
+                    actionCell = `
+                        <input type="number" id="price-${req.id}" placeholder="Giá (Wei)" />
+                        <button onclick="sendQuotation(${req.id})">Báo giá</button>
+                    `;
+                }
+
+                // Nếu khách đã chấp nhận: cho phép duyệt
+                else if (req.status === 2) {
+                    actionCell = `
+                        <input type="text" id="transporter-${req.id}" placeholder="Địa chỉ transporter" />
+                        <input type="number" id="fee-${req.id}" placeholder="Phí vận chuyển (Wei)" />
+                        <button onclick="approveOrder(${req.id})">Duyệt đơn</button>
+                    `;
+                }
+
+                // Nếu đã duyệt trở đi: hiển thị transporter/fee
+                else if (req.status >= 3) {
+                    try {
+                        const delivery = await contract.getDelivery(req.id);
+                        const payment = await contract.getPayment(req.id);
+
+                        info += `<div>🚚 Vận chuyển: ${delivery.transporter}</div>`;
+                        info += `<div>💸 Phí: ${ethers.utils.formatEther(payment.transportFee)} ETH</div>`;
+                    } catch (err) {
+                        info += `<div style="color:red;">⚠️ Lỗi lấy thông tin giao hàng</div>`;
+                    }
+
+                    actionCell = `<i>Đã xử lý</i>`;
+                } else {
+                    actionCell = `<i>Không thể báo giá</i>`;
+                }
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${req.id}</td>
+                    <td>${req.customer}</td>
+                    <td>${req.productName}</td>
+                    <td>${req.quantity}</td>
+                    <td>${ethers.utils.formatEther(req.maxUnitPrice)} ETH</td>
+                    <td>${statusText}<br/>${info}</td>
+                    <td>${actionCell}</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        document.getElementById("requests-list").style.display = "block";
+        addDebugMessage(`Đã tải ${myRequests.length} yêu cầu dành cho supplier ${wallet.address}`);
+    } catch (err) {
+        console.error('loadAllRequests error:', err);
+        addDebugMessage('Lỗi khi tải yêu cầu: ' + err.message, true);
+    }
+}
+
+		async function approveOrder(requestId) {
+    const transporter = document.getElementById(`transporter-${requestId}`).value;
+    const fee = document.getElementById(`fee-${requestId}`).value;
+
+    // Validate transporter address
+    if (!ethers.utils.isAddress(transporter)) {
+        alert("Địa chỉ transporter không hợp lệ.");
+        return;
+    }
+
+    // Validate transport fee
+    if (!fee || isNaN(fee) || fee <= 0) {
+        alert("Phí vận chuyển không hợp lệ.");
+        return;
+    }
+
+    try {
+        // Get the offered unit price from the contract
+        const unitPrice = await contract.offeredPrices(requestId);
+        
+        // Convert fee to Wei (assuming fee is in ETH)
+        const transportFeeWei = ethers.utils.parseEther(fee.toString());
+        
+        // Check if the transporter is valid
+        const isValidTransporter = await contract.isTransporter(transporter);
+        if (!isValidTransporter) {
+            alert("Địa chỉ transporter không được ủy quyền.");
+            return;
+        }
+
+        // Get request details to verify status
+        const request = await contract.requests(requestId);
+        if (request.status !== 2) { // RequestStatus.AcceptedByCustomer = 2
+            alert("Khách hàng chưa chấp nhận báo giá.");
+            return;
+        }
+
+        // Call the contract function
+        const tx = await contract.approveOrder(
+            requestId, 
+            unitPrice, 
+            transporter, 
+            transportFeeWei
+        );
+        
+        await tx.wait();
+        alert("✅ Đã duyệt đơn hàng thành công.");
+        loadAllRequests();
+        
+    } catch (err) {
+        console.error("Error approving order:", err);
+        
+        // Handle specific error cases
+        let errorMessage = "❌ Lỗi khi duyệt đơn: ";
+        
+        if (err.reason) {
+            errorMessage += err.reason;
+        } else if (err.data?.message) {
+            errorMessage += err.data.message;
+        } else if (err.message.includes("Customer has not accepted")) {
+            errorMessage += "Khách hàng chưa chấp nhận báo giá";
+        } else if (err.message.includes("Too expensive")) {
+            errorMessage += "Giá quá cao so với mức tối đa";
+        } else if (err.message.includes("Invalid transporter")) {
+            errorMessage += "Transporter không hợp lệ";
+        } else if (err.message.includes("Not a manager")) {
+            errorMessage += "Chỉ manager mới có thể duyệt đơn hàng";
+        } else {
+            errorMessage += err.message;
+        }
+        
+        alert(errorMessage);
+    }
+}
+    async function sendQuotation(requestId) {
+        const priceInput = document.getElementById(`price-${requestId}`);
+        const price = priceInput.value;
+
+        if (!price || isNaN(price) || price <= 0) {
+            alert("Giá không hợp lệ.");
+            return;
+        }
+
+        try {
+            const tx = await contract.sendQuotation(requestId, price);
+            await tx.wait();
+            alert("✅ Báo giá đã được gửi.");
+            loadAllRequests();
+        } catch (err) {
+            console.error(err);
+            alert("❌ Lỗi khi gửi báo giá.");
+        }
+    }
+
+// Add new transporter
+// DOM elements for transporter management
+const newTransporterInput = document.getElementById('new-transporter-input');
+const addTransporterBtn = document.getElementById('add-transporter-btn');
+const refreshTransportersBtn = document.getElementById('refresh-transporters-btn');
+const transportersLoading = document.getElementById('transporters-loading');
+const transportersTableContainer = document.getElementById('transporters-table-container');
+const transportersTableBody = document.getElementById('transporters-table-body');
+const transportersEmptyMessage = document.getElementById('transporters-empty-message');
+
+// Add new transporter
+async function addTransporter() {
+    const transporterAddress = newTransporterInput.value.trim();
+    
+    if (!ethers.utils.isAddress(transporterAddress)) {
+        addDebugMessage('Invalid transporter address format', 'error');
+        showNotification('Please enter a valid Ethereum address', 'error');
+        return;
+    }
+    
+    try {
+        addTransporterBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
+        addTransporterBtn.disabled = true;
+        
+        // Call addTransporter function from contract (only managers can do this)
+        const tx = await contract.addTransporter(transporterAddress);
+        addDebugMessage(`Transaction submitted: ${tx.hash}`, 'info');
+        
+        await tx.wait();
+        
+        addDebugMessage(`Transporter added successfully: ${truncateAddress(transporterAddress)}`, 'success');
+        showNotification('Transporter added successfully', 'success');
+        newTransporterInput.value = '';
+        
+        // Automatically refresh transporters list
+        await fetchTransporters();
+        
+    } catch (error) {
+        addDebugMessage(`Failed to add transporter: ${error.message}`, 'error');
+        showNotification('Failed to add transporter', 'error');
+    } finally {
+        addTransporterBtn.innerHTML = `<i class="fas fa-plus"></i> Add Transporter`;
+        addTransporterBtn.disabled = false;
+    }
+}
+
+// Remove transporter
+async function removeTransporter(address) {
+    if (!contract || !account) return;
+    
+    const confirmDelete = confirm(`Are you sure you want to remove transporter: ${address}?`);
+    if (!confirmDelete) return;
+    
+    try {
+        addDebugMessage(`Removing transporter ${address}...`, 'info');
+        
+        // Call removeTransporter function from contract (only managers can do this)
+        const tx = await contract.removeTransporter(address);
+        await tx.wait();
+        
+        addDebugMessage(`Transporter ${address} removed successfully.`, 'success');
+        showNotification('Transporter removed successfully', 'success');
+        await fetchTransporters();
+    } catch (error) {
+        addDebugMessage(`Failed to remove transporter: ${error.message}`, 'error');
+        showNotification('Failed to remove transporter', 'error');
+    }
+}
+
+// Fetch and display transporters
+async function fetchTransporters() {
+    if (!contract) return;
+    
+    try {
+        transportersLoading.style.display = 'block';
+        transportersTableContainer.style.display = 'none';
+        transportersEmptyMessage.style.display = 'none';
+        
+        // Since the contract doesn't have a direct way to get all transporters,
+        // we'll listen to events or maintain a list in the frontend
+        // For now, let's create a method to check if specific addresses are transporters
+        
+        // You might need to maintain a list of transporter addresses in your frontend
+        // or add a function to your contract to return all transporters
+        const transporters = await getTransportersList(); // This function needs to be implemented
+        
+        transportersLoading.style.display = 'none';
+        
+        if (transporters.length === 0) {
+            transportersEmptyMessage.style.display = 'block';
+            return;
+        }
+        
+        transportersTableContainer.style.display = 'block';
+        
+        // Clear existing table
+        transportersTableBody.innerHTML = '';
+        
+        // Populate table
+        for (let i = 0; i < transporters.length; i++) {
+            const transporter = transporters[i];
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${i + 1}</td>
+                <td>
+                    <span class="address-display" title="${transporter}">
+                        ${truncateAddress(transporter)}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="removeTransporter('${transporter}')">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </td>
+            `;
+            
+            transportersTableBody.appendChild(row);
+        }
+        
+        addDebugMessage(`Loaded ${transporters.length} transporters`, 'info');
+        
+    } catch (error) {
+        transportersLoading.style.display = 'none';
+        transportersEmptyMessage.style.display = 'block';
+        addDebugMessage(`Failed to fetch transporters: ${error.message}`, 'error');
+    }
+}
+
+// Helper function to get transporters list
+// Since your contract doesn't have a direct function to get all transporters,
+// you'll need to either:
+// 1. Add a function to your contract to return all transporters
+// 2. Listen to TransporterAdded/TransporterRemoved events and maintain a list
+// 3. Store the list in localStorage or a database
+async function getTransportersList() {
+    // Method 1: If you add a function to your contract
+    // return await contract.getAllTransporters();
+    
+    // Method 2: Use localStorage to maintain the list
+    const stored = localStorage.getItem('transporters');
+    if (stored) {
+        const transporters = JSON.parse(stored);
+        // Verify each address is still a transporter
+        const validTransporters = [];
+        for (const addr of transporters) {
+            try {
+                const isTransporter = await contract.isTransporter(addr);
+                if (isTransporter) {
+                    validTransporters.push(addr);
+                }
+            } catch (error) {
+                console.log(`Error checking transporter ${addr}:`, error);
+            }
+        }
+        // Update localStorage with valid transporters
+        localStorage.setItem('transporters', JSON.stringify(validTransporters));
+        return validTransporters;
+    }
+    
+    return [];
+}
+
+// Helper function to add transporter to localStorage
+function addTransporterToStorage(address) {
+    const stored = localStorage.getItem('transporters');
+    const transporters = stored ? JSON.parse(stored) : [];
+    if (!transporters.includes(address)) {
+        transporters.push(address);
+        localStorage.setItem('transporters', JSON.stringify(transporters));
+    }
+}
+
+// Helper function to remove transporter from localStorage
+function removeTransporterFromStorage(address) {
+    const stored = localStorage.getItem('transporters');
+    if (stored) {
+        const transporters = JSON.parse(stored);
+        const filtered = transporters.filter(addr => addr !== address);
+        localStorage.setItem('transporters', JSON.stringify(filtered));
+    }
+}
+
+// Enhanced add transporter function with storage
+async function addTransporterEnhanced() {
+    console.log('addTransporterEnhanced called');
+    
+    const transporterInput = document.getElementById('new-transporter-input');
+    const addBtn = document.getElementById('add-transporter-btn');
+    
+    if (!transporterInput || !addBtn) {
+        console.error('Required elements not found');
+        return;
+    }
+    
+    const transporterAddress = transporterInput.value.trim();
+    
+    if (!transporterAddress) {
+        addDebugMessage('Please enter a transporter address', 'error');
+        showNotification('Please enter a transporter address', 'error');
+        return;
+    }
+    
+    if (!ethers || !ethers.utils.isAddress(transporterAddress)) {
+        addDebugMessage('Invalid transporter address format', 'error');
+        showNotification('Please enter a valid Ethereum address', 'error');
+        return;
+    }
+    
+    if (!contract) {
+        addDebugMessage('Contract not connected', 'error');
+        showNotification('Please connect to the contract first', 'error');
+        return;
+    }
+    
+    try {
+        addBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
+        addBtn.disabled = true;
+        
+        console.log('Calling contract.addTransporter with:', transporterAddress);
+        const tx = await contract.addTransporter(transporterAddress);
+        addDebugMessage(`Transaction submitted: ${tx.hash}`, 'info');
+        
+        console.log('Waiting for transaction confirmation...');
+        await tx.wait();
+        
+        // Add to localStorage
+        addTransporterToStorage(transporterAddress);
+        
+        addDebugMessage(`Transporter added successfully: ${truncateAddress(transporterAddress)}`, 'success');
+        showNotification('Transporter added successfully', 'success');
+        transporterInput.value = '';
+        
+        await fetchTransporters();
+        
+    } catch (error) {
+        console.error('Error adding transporter:', error);
+        addDebugMessage(`Failed to add transporter: ${error.message}`, 'error');
+        showNotification('Failed to add transporter', 'error');
+    } finally {
+        addBtn.innerHTML = `<i class="fas fa-plus"></i> Add Transporter`;
+        addBtn.disabled = false;
+    }
+}
+
+// Enhanced remove transporter function with storage
+async function removeTransporterEnhanced(address) {
+    if (!contract || !account) return;
+    
+    const confirmDelete = confirm(`Are you sure you want to remove transporter: ${address}?`);
+    if (!confirmDelete) return;
+    
+    try {
+        addDebugMessage(`Removing transporter ${address}...`, 'info');
+        
+        const tx = await contract.removeTransporter(address);
+        await tx.wait();
+        
+        // Remove from localStorage
+        removeTransporterFromStorage(address);
+        
+        addDebugMessage(`Transporter ${address} removed successfully.`, 'success');
+        showNotification('Transporter removed successfully', 'success');
+        await fetchTransporters();
+    } catch (error) {
+        addDebugMessage(`Failed to remove transporter: ${error.message}`, 'error');
+        showNotification('Failed to remove transporter', 'error');
+    }
+}
+
+// Event listeners - Improved version
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing transporter management...');
+    
+    // Check if elements exist
+    const addBtn = document.getElementById('add-transporter-btn');
+    const refreshBtn = document.getElementById('refresh-transporters-btn');
+    const inputField = document.getElementById('new-transporter-input');
+    
+    if (!addBtn) {
+        console.error('Add transporter button not found!');
+        return;
+    }
+    
+    if (!refreshBtn) {
+        console.error('Refresh transporters button not found!');
+        return;
+    }
+    
+    // Make sure buttons are enabled
+    addBtn.disabled = false;
+    refreshBtn.disabled = false;
+    
+    // Add event listeners
+    addBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Add transporter button clicked');
+        addTransporterEnhanced();
+    });
+    
+    refreshBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Refresh transporters button clicked');
+        fetchTransporters();
+    });
+    
+    if (inputField) {
+        inputField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTransporterEnhanced();
+            }
+        });
+    }
+    
+    console.log('Transporter management initialized successfully');
+});
+
+// Initialize transporters when wallet is connected
+async function initializeTransporters() {
+    if (contract && account) {
+        await fetchTransporters();
+    }
+}
+
+
+</script>
+</body>
+</html>
+   
