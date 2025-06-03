@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supply Chain - Supplier Dashboard</title>
+    <title>Supply Chain - Supplier </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
@@ -1453,6 +1453,25 @@
 				"type": "uint256"
 			}
 		],
+		"name": "paidAmounts",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
 		"name": "payments",
 		"outputs": [
 			{
@@ -2382,14 +2401,14 @@ async function loadAllRequests() {
                 let info = "";
 				
                 if (req.status >= 1) {
-                    info += `<div>💬 Giá báo: ${ethers.utils.formatEther(offeredPrice)} ETH</div>`;
+                    info += `<div>💬 Giá báo/đơn vị: ${ethers.utils.formatEther(offeredPrice)} ETH</div>`;
                 }
 
                 // Nếu đang chờ xử lý: cho báo giá
                 if (req.status === 0) {
                     actionCell = `
                         <input type="number" id="price-${req.id}" placeholder="Giá (Wei)" />
-                        <button onclick="sendQuotation(${req.id})">Báo giá</button>
+                        <button onclick="sendQuotation(${req.id})">Báo giá/đơn vị</button>
                     `;
                 }
 
@@ -2397,7 +2416,7 @@ async function loadAllRequests() {
                 else if (req.status === 2) {
                     actionCell = `
                         <input type="text" id="transporter-${req.id}" placeholder="Địa chỉ transporter" />
-                        <input type="number" id="fee-${req.id}" placeholder="Phí vận chuyển (Wei)" />
+                        <input type="number" id="fee-${req.id}" placeholder="Phí vận chuyển (ETH)" />
                         <button onclick="approveOrder(${req.id})">Duyệt đơn</button>
                     `;
                 }
@@ -2548,30 +2567,29 @@ const transportersEmptyMessage = document.getElementById('transporters-empty-mes
 // Add new transporter
 async function addTransporter() {
     const transporterAddress = newTransporterInput.value.trim();
-    
+
     if (!ethers.utils.isAddress(transporterAddress)) {
         addDebugMessage('Invalid transporter address format', 'error');
         showNotification('Please enter a valid Ethereum address', 'error');
         return;
     }
-    
+
     try {
-        addTransporterBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
+        addTransporterBtn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Processing...`;
         addTransporterBtn.disabled = true;
-        
-        // Call addTransporter function from contract (only managers can do this)
+
         const tx = await contract.addTransporter(transporterAddress);
         addDebugMessage(`Transaction submitted: ${tx.hash}`, 'info');
-        
+
         await tx.wait();
-        
+
         addDebugMessage(`Transporter added successfully: ${truncateAddress(transporterAddress)}`, 'success');
         showNotification('Transporter added successfully', 'success');
         newTransporterInput.value = '';
-        
-        // Automatically refresh transporters list
+
+        // Tự động refresh danh sách transporters
         await fetchTransporters();
-        
+
     } catch (error) {
         addDebugMessage(`Failed to add transporter: ${error.message}`, 'error');
         showNotification('Failed to add transporter', 'error');
@@ -2580,6 +2598,7 @@ async function addTransporter() {
         addTransporterBtn.disabled = false;
     }
 }
+
 
 // Remove transporter
 async function removeTransporter(address) {
@@ -2859,9 +2878,6 @@ async function initializeTransporters() {
         await fetchTransporters();
     }
 }
-
-
 </script>
 </body>
 </html>
-   
